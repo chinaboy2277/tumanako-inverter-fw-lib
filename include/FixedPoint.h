@@ -41,20 +41,20 @@ of qbits is fixed, arithmetic on fixed-point numbers can be as efficient as norm
 One of the significant problems with using fixed-point numbers is managing how many qbits a variable
 has and making sure that operations on it respect the number of qbits. For instance if you want to
 add 1 to a fixed-point variable with 4 qbits you must actually add 1<<4 otherwise you will be adding
-incompatable values (a 4-qbit value with a 0-qbit value).
+incompatible values (a 4-qbit value with a 0-qbit value).
 
-This is were a template based fixed-point class can be usefull, it can remember the number of qbits
-a value has, and automatically handle (or warn you about) incompatable operations without the need
+This is were a template based fixed-point class can be useful, it can remember the number of qbits
+a value has, and automatically handle (or warn you about) incompatible operations without the need
 to actually store this information at run-time. Allowing the compiler to potentially produce code
 as good as normal integer arithmetic.
 
 While this implementation attempts to address the above area, it doesn't address one of the other
 problems with managing fixed-point number, namely ensuring values don't overflow or underflow. So 
-carefull consideration should be given to maximum range values can take, and how various operations
+careful consideration should be given to maximum range values can take, and how various operations
 will effect this.
 
 
-As a general philosophy this implementation requires the user to explicity handle any operations
+As a general philosophy this implementation requires the user to explicitly handle any operations
 that would require a reduction in the precision of an argument. This means that given,
 
     typedef tFixedPoint<8>  tQ8;
@@ -126,7 +126,7 @@ TODO:
     a true floating-point constant. eg. -1.25 can be written as "FIXEDPOINT_CONSTANT( tQ4, -1,25 )"
     and will be automatically converted to a fixed-point value of the specified type. This allows
     you to define fixed-point constants in a more natural way when float-point support has not been
-    endabled.
+    enabled.
         For frequent use it would pay to define your own more concise version of the macro, for 
     instance "#define Q4CONST( dec,frac )  FIXEDPOINT_CONSTANT( tQ4, dec,frac )" **/
 #define FIXEDPOINT_CONSTANT( FPType, dec,frac )    \
@@ -140,7 +140,7 @@ TODO:
 
 /** This macro lets you control the implementation used for division. Currently it rounds towards
     +ve infinity, but you may prefer to just truncate or improve it to round away from 0 instead **/
-#define FIXEDPOINT_IMPL_DIVIDE( dividend, divisor )  (((divisor) + ((dividend) >> 1)) / (dividend))
+#define FIXEDPOINT_IMPL_DIVIDE( dividend, divisor )  (((dividend) + ((divisor) >> 1)) / (divisor))
 
 /** This macro lets you control the implementation used for rounding. Currently it rounds towards
     +ve infinity, but you may prefer something else such as to round away from 0 instead. It should
@@ -154,8 +154,8 @@ TODO:
 //-------------------------------------------------------------------------------------------------
 // Class Definition
     
-/** Template class for fixed-point artithmetic. Where 'QBits' is the number of bits reserved to
-    hold the fractional part of the vlaue **/
+/** Template class for fixed-point arithmetic. Where 'QBits' is the number of bits reserved to
+    hold the fractional part of the value **/
 template< int QBits, typename DataType = int >
 class tFixedPoint
 {
@@ -163,7 +163,7 @@ public:
     /** Records the number of qbits used to hold the fractional part of this fixed point class **/
     static const unsigned cQBits = QBits;
     
-    /** Records the underlying type used to store fixed-point values (the combined interger and 
+    /** Records the underlying type used to store fixed-point values (the combined integer and 
         fractional parts) **/
     typedef DataType tValue;
 
@@ -187,7 +187,7 @@ public:
     /** Constructs a fixed-point value from a variable or constant that already has some 'qBits'
         incorporated in it. The 'qValue' must be of equal or lower precision than this class (ie.
         'qBits' <= cQBits) or an invalid value may be constructed - normally resulting in a
-        compilier warning or error, probably about a negative shift count **/
+        compiler warning or error, probably about a negative shift count **/
     tFixedPoint( tValue qValue, unsigned qBits ) : value_( qValue << (QBits - int(qBits)) ) {}
     
     /** Constructs a fixed-point value from separate integer 'intPart' and fractional 'absFracPart'
@@ -202,7 +202,7 @@ public:
     /** Constructs a fixed-point value from another fixed-point value of a different type. The
         source type must be of lower precision (value.cQBits <= cQBits) than this type or the
         constructed value will be incorrect.
-            This situation should result in a compilier warning or error, probably about a negative
+            This situation should result in a compiler warning or error, probably about a negative
         shift count. Use one of the "roundedTo" or "truncatedTo" methods on the source fixed-point
         value to make sure it has lower precision. eg. "tFixedPoint<4> x4( x8.roundedTo<4>() )" **/
     template< int QBits2, typename DataType2 > tFixedPoint( const tFixedPoint<QBits2,DataType2>& value )
@@ -216,7 +216,7 @@ public:
     tValue qValue() const { return value_; }
     
     /** These methods convert a fixed-point value to the same type as another fixed-point variable.
-        Especially usefull when you need to reduce the precision of a value to match another lower
+        Especially useful when you need to reduce the precision of a value to match another lower
         precision one, eg. given "tQ4 x4; tQ8 y8;" then "x4 = y8;" won't work but "x4 = y8.roundedTo( x4 );"
         will. And will continue to work well if x4 becomes an x3, where as "x4 = y8.roundedTo<4>( y8 )"
         will not.
@@ -255,7 +255,7 @@ public:
         { return tFixedPoint<QBits2,DataType>::create( value_ << (QBits2 - QBits) ); }
     
     /** These methods convert a fixed-point value to another fixed-point value with the number of
-        qbits, and unlying data-type specified, for example "tQ8 x8 = y12.roundedTo<8,int>()" **/
+        qbits, and underlying data-type specified, for example "tQ8 x8 = y12.roundedTo<8,int>()" **/
     template< int QBits2, typename DataType2 > tFixedPoint<QBits2,DataType2> truncatedTo() const
         { return tFixedPoint<QBits2,DataType2>::create( value_ >> (QBits - QBits2) ); }
     template< int QBits2, typename DataType2 > tFixedPoint<QBits2,DataType2> roundedTo()   const
@@ -329,14 +329,14 @@ public:
     tFixedPoint& operator*=( const tFixedPoint& value ) { value_ = roundedBy_( value_ * value.value_, QBits ); return *this; }
     tFixedPoint& operator/=( const tFixedPoint& value ) { value_ = FIXEDPOINT_IMPL_DIVIDE( value_, value.value_ ); return *this; }
     
-    /** These methods provide direct support for multipling or dividing by a constant. This is
+    /** These methods provide direct support for multiplying or dividing by a constant. This is
         important for these operations as they affect the number of qbits in the result. Without
-        direct support the constant would be converted into a fixed-point number unnecesserily
-        increasing the possibility of an overflow occuring during the operation **/
+        direct support the constant would be converted into a fixed-point number unnecessarily
+        increasing the possibility of an overflow occurring during the operation **/
     template< typename DataType2 > tFixedPoint& operator*=( const DataType2& value )
-        { value_ *= value; return *this; }
+        { tValue v = value; value_ *= v; return *this; }
     template< typename DataType2 > tFixedPoint& operator/=( const DataType2& value )
-        { value_ = FIXEDPOINT_IMPL_DIVIDE( value_, value ); return *this; }
+        { tValue v = value; value_ = FIXEDPOINT_IMPL_DIVIDE( value_, v ); return *this; }
     
     template< int QBits2, typename DataType2 > tFixedPoint& operator+=( const tFixedPoint<QBits2,DataType2>& value )
         { value_ += value.qValue() << (QBits-QBits2); return *this; }
@@ -356,10 +356,10 @@ public:
     tValue operator/( const tFixedPoint& value ) const
         { return FIXEDPOINT_IMPL_DIVIDE( value_, value.value_ ); }
 
-    /** These methods provide direct support for multipling or dividing by a constant. This is
+    /** These methods provide direct support for multiplying or dividing by a constant. This is
         important for these operations as they affect the number of qbits in the result. Without
-        direct support the constant would be converted into a fixed-point number unnecesserily
-        increasing the possibility of an overflow occuring during the operation **/
+        direct support the constant would be converted into a fixed-point number unnecessarily
+        increasing the possibility of an overflow occurring during the operation **/
     template< typename DataType2 > tFixedPoint operator*( const DataType2& value ) const
         { return create( value_ * value ); }
     template< typename DataType2 > tFixedPoint operator/( const DataType2& value ) const
